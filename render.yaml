@@ -1,0 +1,35 @@
+services:
+  - type: web
+    name: bbq-ordering-api
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: MONGODB_URI
+        sync: false  # 需要手动设置MongoDB Atlas连接字符串
+      - key: UPLOAD_PATH
+        value: ./uploads
+      - key: MAX_FILE_SIZE
+        value: 5242880
+      - key: CORS_ORIGIN
+        value: "*"
+    autoDeploy: true
+    branch: main
+    rootDir: .
+    scaling:
+      minInstances: 1
+      maxInstances: 1
+    disk:
+      name: uploads
+      mountPath: /opt/render/project/src/uploads
+      sizeGB: 1
