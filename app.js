@@ -251,7 +251,7 @@ const server = app.listen(PORT, () => {
   console.log(`📚 API文档: http://localhost:${PORT}/api`);
   console.log(`💚 健康检查: http://localhost:${PORT}/health`);
   console.log(`🔧 运行环境: ${config.nodeEnv}`);
-  console.log(`📊 数据库: ${config.mongodb.uri.replace(/\/\/.*@/, '//***:***@')}`);
+  console.log(`📊 数据库: ${config.database.uri.replace(/\/\/.*@/, '//***:***@')}`);
   console.log('\n🚀 服务器已准备就绪，等待请求...');
 });
 
