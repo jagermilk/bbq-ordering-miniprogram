@@ -1,7 +1,7 @@
 # TODO:
 
-- [x] deploy_1: 创建README.md部署文档，包含项目介绍和安装说明 (priority: High)
-- [x] deploy_2: 添加Railway部署方案和配置说明 (priority: High)
-- [x] deploy_3: 添加Render部署方案和配置说明 (priority: High)
-- [x] deploy_4: 添加MongoDB Atlas云数据库配置说明 (priority: Medium)
-- [x] deploy_5: 添加环境变量配置和本地运行说明 (priority: Medium)
+- [x] env_refactor_1: 创建 .env.development 开发环境配置文件 (priority: High)
+- [x] env_refactor_2: 创建 .env.production 生产环境配置文件 (priority: High)
+- [x] env_refactor_3: 创建 .env.test 测试环境配置文件 (priority: High)
+- [x] env_refactor_4: 重构 api/config/config.js 实现自动加载环境特定配置文件 (priority: High)
+- [x] env_refactor_5: 更新 .env.example 文件说明新的环境配置结构 (priority: Medium)
