@@ -1,5 +1,5 @@
 // API配置和请求封装
-const BASE_URL = 'http://localhost:3000/api';
+const BASE_URL = 'http://localhost:3000/api/v1';
 
 // 请求拦截器
 const request = (url, options = {}) => {
@@ -45,7 +45,7 @@ const request = (url, options = {}) => {
 export const authAPI = {
   // 商户登录
   login: (username, password) => {
-    return request('/auth/login', {
+    return request('/auth/merchant/login', {
       method: 'POST',
       data: { username, password }
     });
@@ -53,7 +53,7 @@ export const authAPI = {
   
   // 微信用户授权
   wechatAuth: (code) => {
-    return request('/auth/wechat', {
+    return request('/auth/wechat/login', {
       method: 'POST',
       data: { code }
     });
@@ -63,9 +63,10 @@ export const authAPI = {
 // 菜品管理相关API
 export const productAPI = {
   // 获取菜品列表
-  getProducts: (merchantId) => {
-    return request(`/products/${merchantId}`);
-  },
+// 使用真实的商户ID
+getProducts: (merchantId = '689d9957e4f9a5cf7a934399') => {
+  return request(`/products/merchant/${merchantId}`);
+},
   
   // 创建菜品
   createProduct: (productData) => {

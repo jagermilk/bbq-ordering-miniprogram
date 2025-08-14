@@ -124,43 +124,63 @@
 				<view class="modal-body">
 					<view class="form-item">
 						<text class="form-label">菜品名称</text>
-						<input 
-							class="form-input" 
-							placeholder="请输入菜品名称"
-							v-model="editForm.name"
-							maxlength="30"
-						/>
+						<view class="input-wrapper">
+							<input 
+								class="form-input" 
+								placeholder="请输入菜品名称"
+								v-model="editForm.name"
+								maxlength="30"
+								@input="onInputChange"
+								@focus="onInputFocus"
+								@blur="onInputBlur"
+							/>
+						</view>
 					</view>
 					
 					<view class="form-item">
 						<text class="form-label">菜品价格</text>
-						<input 
-							class="form-input" 
-							placeholder="请输入价格"
-							v-model="editForm.price"
-							type="digit"
-						/>
+						<view class="input-wrapper">
+							<input 
+								class="form-input" 
+								placeholder="请输入价格"
+								v-model="editForm.price"
+								type="digit"
+								@input="onInputChange"
+								@focus="onInputFocus"
+								@blur="onInputBlur"
+							/>
+						</view>
 					</view>
 					
 					<view class="form-item">
 						<text class="form-label">菜品分类</text>
-						<input 
-							class="form-input" 
-							placeholder="请输入分类（如：烤串类）"
-							v-model="editForm.category"
-							maxlength="20"
-						/>
+						<view class="input-wrapper">
+							<input 
+								class="form-input" 
+								placeholder="请输入分类（如：烤串类）"
+								v-model="editForm.category"
+								maxlength="20"
+								@input="onInputChange"
+								@focus="onInputFocus"
+								@blur="onInputBlur"
+							/>
+						</view>
 					</view>
 					
 					<view class="form-item">
 						<text class="form-label">菜品描述</text>
-						<textarea 
-							class="form-textarea" 
-							placeholder="请输入菜品描述"
-							v-model="editForm.description"
-							maxlength="100"
-							auto-height
-						></textarea>
+						<view class="input-wrapper">
+							<textarea 
+								class="form-textarea" 
+								placeholder="请输入菜品描述"
+								v-model="editForm.description"
+								maxlength="100"
+								auto-height
+								@input="onInputChange"
+								@focus="onInputFocus"
+								@blur="onInputBlur"
+							></textarea>
+						</view>
 					</view>
 					
 					<view class="form-item">
@@ -277,7 +297,7 @@ export default {
 				const response = await productAPI.getProducts(userInfo?.id);
 				
 				if (response.success) {
-					this.products = response.data || [];
+					this.products = response.data.products || [];
 					store.setProducts(this.products);
 				} else {
 					showToast(response.message || '加载失败', 'error');
@@ -590,7 +610,26 @@ export default {
 		},
 		
 		// 工具函数
-		formatPrice
+		formatPrice,
+		
+		// 输入变化处理
+		onInputChange(e) {
+			// 允许正常输入，不做任何阻止
+			console.log('输入内容变化:', e.detail.value);
+			return true;
+		},
+		
+		// 输入框获得焦点
+		onInputFocus(e) {
+			console.log('输入框获得焦点');
+			return true;
+		},
+		
+		// 输入框失去焦点
+		onInputBlur(e) {
+			console.log('输入框失去焦点');
+			return true;
+		}
 	}
 }
 </script>
@@ -957,20 +996,54 @@ export default {
 	display: block;
 }
 
-.form-input,
-.form-textarea {
-	width: 100%;
-	padding: 25rpx;
-	border: 2rpx solid #E9ECEF;
-	border-radius: 15rpx;
-	font-size: 28rpx;
-	color: #333333;
-	box-sizing: border-box;
+.input-wrapper {
+	display: flex;
+	align-items: center;
+	background-color: #F8F9FA;
+	border-radius: 20rpx;
+	padding: 0 30rpx;
+	border: 2rpx solid transparent;
+	transition: all 0.2s;
+	position: relative;
+	z-index: 1;
+	pointer-events: auto;
 }
 
-.form-input:focus,
-.form-textarea:focus {
+.input-wrapper:focus-within {
 	border-color: #FF6B35;
+	background-color: #FFFFFF;
+	box-shadow: 0 0 0 4rpx rgba(255, 107, 53, 0.1);
+}
+
+.form-input,
+.form-textarea {
+	flex: 1;
+	padding: 30rpx 0;
+	font-size: 30rpx;
+	color: #333333;
+	background: transparent;
+	border: none;
+	-webkit-appearance: none;
+	-webkit-user-select: auto;
+	user-select: auto;
+	pointer-events: auto;
+	cursor: text;
+	width: 100%;
+	height: auto;
+	min-height: 80rpx;
+	box-sizing: border-box;
+	-webkit-tap-highlight-color: transparent;
+}
+
+.form-input::placeholder,
+.form-textarea::placeholder {
+	color: #999999;
+}
+
+.form-textarea {
+	min-height: 120rpx;
+	resize: none;
+	padding: 30rpx 0;
 }
 
 .form-textarea {

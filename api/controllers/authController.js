@@ -123,7 +123,7 @@ export const merchantLogin = async (req, res) => {
     }
     
     // 验证密码
-    const isValidPassword = await merchant.validatePassword(password);
+    const isValidPassword = await merchant.comparePassword(password);
     if (!isValidPassword) {
       return res.status(401).json({
         success: false,
@@ -132,7 +132,7 @@ export const merchantLogin = async (req, res) => {
     }
     
     // 检查商户状态
-    if (merchant.status !== 'active') {
+    if (!merchant.isActive) {
       return res.status(401).json({
         success: false,
         message: '商户账户已被禁用'
@@ -156,7 +156,8 @@ export const merchantLogin = async (req, res) => {
       success: true,
       message: '登录成功',
       data: {
-        merchant: {
+        token: accessToken,
+        user: {
           id: merchant._id,
           username: merchant.username,
           name: merchant.name,
@@ -164,17 +165,13 @@ export const merchantLogin = async (req, res) => {
           phone: merchant.phone,
           address: merchant.address,
           avatar: merchant.avatar,
-          status: merchant.status,
-          isOpen: merchant.isOpen,
+          isActive: merchant.isActive,
           businessHours: merchant.businessHours,
           settings: merchant.settings,
           stats: merchant.stats
         },
-        tokens: {
-          accessToken,
-          refreshToken,
-          expiresIn: '8h'
-        }
+        refreshToken,
+        expiresIn: '8h'
       }
     });
     
@@ -216,7 +213,7 @@ export const merchantRegister = async (req, res) => {
       name,
       phone,
       address: address || '',
-      status: 'active'
+      isActive: true
     });
     
     await merchant.save();
@@ -231,7 +228,7 @@ export const merchantRegister = async (req, res) => {
           name: merchant.name,
           phone: merchant.phone,
           address: merchant.address,
-          status: merchant.status
+          isActive: merchant.isActive
         }
       }
     });
@@ -329,8 +326,7 @@ export const getCurrentMerchant = async (req, res) => {
             phone: req.merchant.phone,
             address: req.merchant.address,
             avatar: req.merchant.avatar,
-            status: req.merchant.status,
-            isOpen: req.merchant.isOpen,
+            isActive: req.merchant.isActive,
             businessHours: req.merchant.businessHours,
             settings: req.merchant.settings,
             stats: req.merchant.stats,

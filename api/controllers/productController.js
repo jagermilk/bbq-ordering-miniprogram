@@ -138,10 +138,34 @@ export const getProducts = async (req, res) => {
       Product.countDocuments(query)
     ]);
     
+    // 转换菜品数据格式，将_id转换为id
+    const formattedProducts = products.map(product => {
+      const productObj = product.toObject();
+      return {
+        id: productObj._id,
+        name: productObj.name,
+        price: productObj.price,
+        description: productObj.description,
+        category: productObj.category,
+        isAvailable: productObj.isAvailable,
+        image: productObj.image,
+        stock: productObj.stock,
+        tags: productObj.tags,
+        nutrition: productObj.nutrition,
+        cookingTime: productObj.cookingTime,
+        spicyLevel: productObj.spicyLevel,
+        recommendLevel: productObj.recommendLevel,
+        sortOrder: productObj.sortOrder,
+        soldCount: productObj.soldCount,
+        createdAt: productObj.createdAt,
+        updatedAt: productObj.updatedAt
+      };
+    });
+    
     res.json({
       success: true,
       data: {
-        products,
+        products: formattedProducts,
         pagination: {
           current: parseInt(page),
           pageSize: parseInt(limit),

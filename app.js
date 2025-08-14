@@ -8,7 +8,7 @@ import { fileURLToPath } from 'url';
 
 // 导入配置和数据库连接
 import config from './api/config/config.js';
-import './api/config/database.js';
+import connectDB from './api/config/database.js';
 
 // 导入路由
 import authRoutes from './api/routes/auth.js';
@@ -245,15 +245,29 @@ const gracefulShutdown = (signal) => {
 };
 
 // 启动服务器
-const server = app.listen(PORT, () => {
-  console.log('\n🔥 烧烤摆摊点单小程序API服务器启动成功!');
-  console.log(`🌐 服务器地址: http://localhost:${PORT}`);
-  console.log(`📚 API文档: http://localhost:${PORT}/api`);
-  console.log(`💚 健康检查: http://localhost:${PORT}/health`);
-  console.log(`🔧 运行环境: ${config.nodeEnv}`);
-  console.log(`📊 数据库: ${config.database.uri.replace(/\/\/.*@/, '//***:***@')}`);
-  console.log('\n🚀 服务器已准备就绪，等待请求...');
-});
+const startServer = async () => {
+  try {
+    // 连接数据库
+    await connectDB();
+    
+    // 启动服务器
+    const server = app.listen(PORT, () => {
+      console.log('\n🔥 烧烤摆摊点单小程序API服务器启动成功!');
+      console.log(`🌐 服务器地址: http://localhost:${PORT}`);
+      console.log(`📚 API文档: http://localhost:${PORT}/api`);
+      console.log(`💚 健康检查: http://localhost:${PORT}/health`);
+      console.log(`🔧 运行环境: ${config.nodeEnv}`);
+      console.log('\n🚀 服务器已准备就绪，等待请求...');
+    });
+    
+    return server;
+  } catch (error) {
+    console.error('服务器启动失败:', error);
+    process.exit(1);
+  }
+};
+
+const server = await startServer();
 
 // 监听进程信号
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));

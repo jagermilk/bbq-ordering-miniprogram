@@ -139,7 +139,7 @@ export default {
 			if (this.form.username === 'admin' && this.form.password === '123456') {
 				// 模拟登录成功
 				const mockUser = {
-					id: 'merchant_001',
+					id: '689d94697c14eb9f089306fd',
 					username: 'admin',
 					name: '烧烤摊示例店',
 					role: 'merchant'
