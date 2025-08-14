@@ -1,0 +1,89 @@
+{
+	"pages": [
+		{
+			"path": "pages/index/index",
+			"style": {
+				"navigationBarTitleText": "烧烤摆摊点单",
+				"navigationStyle": "default"
+			}
+		},
+		{
+			"path": "pages/menu/menu",
+			"style": {
+				"navigationBarTitleText": "菜品列表",
+				"enablePullDownRefresh": true
+			}
+		},
+		{
+			"path": "pages/cart/cart",
+			"style": {
+				"navigationBarTitleText": "购物车"
+			}
+		},
+		{
+			"path": "pages/order/order",
+			"style": {
+				"navigationBarTitleText": "订单详情"
+			}
+		},
+		{
+			"path": "pages/login/login",
+			"style": {
+				"navigationBarTitleText": "商户登录",
+				"navigationStyle": "default"
+			}
+		},
+		{
+			"path": "pages/merchant/product",
+			"style": {
+				"navigationBarTitleText": "菜品管理"
+			}
+		},
+		{
+			"path": "pages/merchant/order",
+			"style": {
+				"navigationBarTitleText": "订单管理",
+				"enablePullDownRefresh": true
+			}
+		},
+		{
+			"path": "pages/merchant/stats",
+			"style": {
+				"navigationBarTitleText": "数据统计"
+			}
+		}
+	],
+	"globalStyle": {
+		"navigationBarTextStyle": "white",
+		"navigationBarTitleText": "烧烤摆摊点单",
+		"navigationBarBackgroundColor": "#FF6B35",
+		"backgroundColor": "#F8F9FA"
+	},
+	"tabBar": {
+		"color": "#666666",
+		"selectedColor": "#FF6B35",
+		"backgroundColor": "#FFFFFF",
+		"borderStyle": "black",
+		"list": [
+			{
+				"pagePath": "pages/menu/menu",
+				"text": "菜品",
+				"iconPath": "static/icons/menu.svg",
+				"selectedIconPath": "static/icons/menu.svg"
+			},
+			{
+				"pagePath": "pages/cart/cart",
+				"text": "购物车",
+				"iconPath": "static/icons/cart.svg",
+				"selectedIconPath": "static/icons/cart.svg"
+			},
+			{
+				"pagePath": "pages/order/order",
+				"text": "订单",
+				"iconPath": "static/icons/order.svg",
+				"selectedIconPath": "static/icons/order.svg"
+			}
+		]
+	},
+	"uniIdRouter": {}
+}
