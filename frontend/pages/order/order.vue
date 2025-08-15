@@ -171,7 +171,7 @@ export default {
 			try {
 				const response = await orderAPI.getOrders();
 				if (response.success) {
-					store.setOrders(response.data);
+					store.setOrders(response.data.orders);
 				}
 			} catch (error) {
 				console.error('加载订单失败:', error);
@@ -271,7 +271,7 @@ export default {
 			try {
 				const response = await orderAPI.getOrderDetail(this.currentOrder.id);
 				if (response.success) {
-					const updatedOrder = response.data;
+					const updatedOrder = response.data.order;
 					store.setCurrentOrder(updatedOrder);
 					store.updateOrder(updatedOrder.id, updatedOrder);
 					this.calculateEstimatedTime();

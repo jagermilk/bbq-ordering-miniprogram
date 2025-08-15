@@ -64,19 +64,27 @@
 			<view class="info-section">
 				<text class="section-title">联系信息</text>
 				<view class="contact-form">
-					<input 
-						class="contact-input" 
-						placeholder="请输入您的称呼（可选）"
-						v-model="customerInfo.nickname"
-						maxlength="20"
-					/>
-					<input 
-						class="contact-input" 
-						placeholder="请输入手机号（可选）"
-						v-model="customerInfo.phone"
-						type="number"
-						maxlength="11"
-					/>
+					<view class="input-wrapper">
+						<input 
+							class="contact-input" 
+							placeholder="请输入您的称呼（可选）"
+							v-model="customerInfo.nickname"
+							maxlength="20"
+							:focus="false"
+							confirm-type="next"
+						/>
+					</view>
+					<view class="input-wrapper">
+						<input 
+							class="contact-input" 
+							placeholder="请输入手机号（可选）"
+							v-model="customerInfo.phone"
+							type="number"
+							maxlength="11"
+							:focus="false"
+							confirm-type="done"
+						/>
+					</view>
 				</view>
 			</view>
 			
@@ -483,16 +491,46 @@ export default {
 	gap: 20rpx;
 }
 
-.contact-input {
-	padding: 25rpx;
-	border: 2rpx solid #E9ECEF;
+.input-wrapper {
+	display: flex;
+	align-items: center;
+	background-color: #F8F9FA;
 	border-radius: 15rpx;
-	font-size: 28rpx;
-	color: #333333;
+	padding: 0 25rpx;
+	border: 2rpx solid transparent;
+	transition: all 0.2s;
+	position: relative;
+	z-index: 1;
+	pointer-events: auto;
 }
 
-.contact-input:focus {
+.input-wrapper:focus-within {
 	border-color: #FF6B35;
+	background-color: #FFFFFF;
+	box-shadow: 0 0 0 4rpx rgba(255, 107, 53, 0.1);
+}
+
+.contact-input {
+	flex: 1;
+	padding: 25rpx 0;
+	font-size: 28rpx;
+	color: #333333;
+	background: transparent;
+	border: none;
+	-webkit-appearance: none;
+	-webkit-user-select: auto;
+	user-select: auto;
+	pointer-events: auto;
+	cursor: text;
+	width: 100%;
+	height: auto;
+	min-height: 60rpx;
+	box-sizing: border-box;
+	-webkit-tap-highlight-color: transparent;
+}
+
+.contact-input::placeholder {
+	color: #999999;
 }
 
 /* 价格汇总 */

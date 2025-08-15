@@ -34,6 +34,13 @@
 			}
 		},
 		{
+			"path": "pages/merchant/index",
+			"style": {
+				"navigationBarTitleText": "商户管理",
+				"navigationStyle": "default"
+			}
+		},
+		{
 			"path": "pages/merchant/product",
 			"style": {
 				"navigationBarTitleText": "菜品管理"
@@ -50,6 +57,12 @@
 			"path": "pages/merchant/stats",
 			"style": {
 				"navigationBarTitleText": "数据统计"
+			}
+		},
+		{
+			"path": "pages/merchant-search/merchant-search",
+			"style": {
+				"navigationBarTitleText": "搜索商户"
 			}
 		}
 	],

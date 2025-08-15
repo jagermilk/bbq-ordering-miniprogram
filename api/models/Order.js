@@ -328,6 +328,33 @@ orderSchema.virtual('formattedAmount').get(function() {
   return `¥${this.totalAmount.toFixed(2)}`;
 });
 
+// 虚拟字段：客户姓名（兼容前端期望的字段名）
+orderSchema.virtual('customerName').get(function() {
+  if (this.customerId && this.customerId.nickname) {
+    return this.customerId.nickname;
+  }
+  if (this.customerInfo && this.customerInfo.nickname) {
+    return this.customerInfo.nickname;
+  }
+  return '顾客';
+});
+
+// 虚拟字段：客户电话（兼容前端期望的字段名）
+orderSchema.virtual('customerPhone').get(function() {
+  if (this.customerId && this.customerId.phone) {
+    return this.customerId.phone;
+  }
+  if (this.customerInfo && this.customerInfo.phone) {
+    return this.customerInfo.phone;
+  }
+  return null;
+});
+
+// 虚拟字段：就餐方式（兼容前端期望的字段名）
+orderSchema.virtual('diningType').get(function() {
+  return this.dineType === 'dine-in' ? 'dine_in' : this.dineType;
+});
+
 // 转换为JSON时包含虚拟字段
 orderSchema.set('toJSON', { virtuals: true });
 

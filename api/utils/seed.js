@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import dotenv from 'dotenv';
 import Merchant from '../models/Merchant.js';
 import Product from '../models/Product.js';
+import User from '../models/User.js';
 
 // 加载环境变量
 dotenv.config();
@@ -50,6 +51,40 @@ const createDefaultMerchant = async () => {
     return defaultMerchant;
   } catch (error) {
     console.error('❌ 创建默认商户失败:', error.message);
+    throw error;
+  }
+};
+
+// 创建默认用户
+const createDefaultUser = async () => {
+  try {
+    // 检查是否已存在默认用户
+    const existingUser = await User.findOne({ username: 'testuser' });
+    if (existingUser) {
+      console.log('⚠️  默认用户已存在，跳过创建');
+      return existingUser;
+    }
+
+    // 加密密码
+    const hashedPassword = await bcrypt.hash('test123456', 12);
+
+    // 创建默认用户
+    const defaultUser = new User({
+      username: 'testuser',
+      password: hashedPassword,
+      nickname: '测试用户',
+      role: 'customer',
+      isActive: true
+    });
+
+    await defaultUser.save();
+    console.log('✅ 默认用户创建成功');
+    console.log('   用户名: testuser');
+    console.log('   密码: test123456');
+    
+    return defaultUser;
+  } catch (error) {
+    console.error('❌ 创建默认用户失败:', error.message);
     throw error;
   }
 };
@@ -166,6 +201,9 @@ const seedDatabase = async () => {
     // 创建默认商户
     const merchant = await createDefaultMerchant();
     
+    // 创建默认用户
+    const user = await createDefaultUser();
+    
     // 创建示例菜品
     await createSampleProducts(merchant._id);
     
@@ -175,6 +213,10 @@ const seedDatabase = async () => {
     console.log('   商户用户名: admin');
     console.log('   商户密码: 123456');
     console.log('   商户ID:', merchant._id.toString());
+    console.log('');
+    console.log('   用户用户名: testuser');
+    console.log('   用户密码: test123456');
+    console.log('   用户ID:', user._id.toString());
     console.log('');
     console.log('🚀 现在可以启动服务器了:');
     console.log('   npm start');

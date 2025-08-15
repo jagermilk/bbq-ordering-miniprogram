@@ -47,7 +47,7 @@ export const authenticateUser = async (req, res, next) => {
     }
     
     // 检查用户状态
-    if (user.status !== 'active') {
+    if (!user.isActive) {
       return res.status(401).json({
         success: false,
         message: '用户账户已被禁用'
@@ -92,7 +92,7 @@ export const authenticateMerchant = async (req, res, next) => {
     }
     
     // 检查商户状态
-    if (merchant.status !== 'active') {
+    if (!merchant.isActive) {
       return res.status(401).json({
         success: false,
         message: '商户账户已被禁用'
@@ -148,7 +148,7 @@ export const optionalAuth = async (req, res, next) => {
       const decoded = verifyToken(token);
       
       const user = await User.findById(decoded.userId).select('-__v');
-      if (user && user.status === 'active') {
+      if (user && user.isActive) {
         req.user = user;
         req.userId = user._id;
       }
@@ -207,7 +207,7 @@ export const refreshToken = async (req, res, next) => {
       entity = await Merchant.findById(decoded.merchantId);
     }
     
-    if (!entity || entity.status !== 'active') {
+    if (!entity || (entity.isActive !== undefined && !entity.isActive) || (entity.status !== undefined && entity.status !== 'active')) {
       return res.status(401).json({
         success: false,
         message: '刷新令牌无效'

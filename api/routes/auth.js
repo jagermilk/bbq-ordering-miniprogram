@@ -1,7 +1,9 @@
 import express from 'express';
-import { body, validationResult } from 'express-validator';
+import { body, query, validationResult } from 'express-validator';
 import {
   wechatLogin,
+  userLogin,
+  userRegister,
   merchantLogin,
   merchantRegister,
   refreshTokens,
@@ -9,7 +11,8 @@ import {
   getCurrentMerchant,
   updateUserProfile,
   updateMerchantProfile,
-  logout
+  logout,
+  searchMerchants
 } from '../controllers/authController.js';
 import {
   authenticateUser,
@@ -47,6 +50,44 @@ const wechatLoginValidation = [
     .isURL()
     .withMessage('头像URL格式不正确')
 ];
+
+// 用户登录验证规则
+const userLoginValidation = [
+  body('username')
+    .notEmpty()
+    .withMessage('用户名不能为空')
+    .isLength({ min: 3, max: 20 })
+    .withMessage('用户名长度应在3-20个字符之间'),
+  body('password')
+    .notEmpty()
+    .withMessage('密码不能为空')
+    .isLength({ min: 6, max: 50 })
+    .withMessage('密码长度应在6-50个字符之间')
+];
+
+// 用户注册验证规则
+const userRegisterValidation = [
+  body('username')
+    .notEmpty()
+    .withMessage('用户名不能为空')
+    .isLength({ min: 3, max: 20 })
+    .withMessage('用户名长度应在3-20个字符之间')
+    .matches(/^[a-zA-Z0-9_]+$/)
+    .withMessage('用户名只能包含字母、数字和下划线'),
+  body('password')
+    .notEmpty()
+    .withMessage('密码不能为空')
+    .isLength({ min: 6, max: 50 })
+    .withMessage('密码长度应在6-50个字符之间'),
+  body('nickname')
+    .optional()
+    .isLength({ min: 1, max: 50 })
+    .withMessage('昵称长度应在1-50个字符之间'),
+  body('phone')
+    .optional()
+    .matches(/^1[3-9]\d{9}$/)
+    .withMessage('请输入有效的手机号码')
+]
 
 // 商户登录验证规则
 const merchantLoginValidation = [
@@ -143,6 +184,19 @@ const refreshTokenValidation = [
     .withMessage('刷新令牌不能为空')
 ];
 
+// 商户搜索验证规则
+const merchantSearchValidation = [
+  query('keyword')
+    .notEmpty()
+    .withMessage('搜索关键词不能为空')
+    .isLength({ min: 1, max: 50 })
+    .withMessage('关键词长度应在1-50个字符之间'),
+  query('limit')
+    .optional()
+    .isInt({ min: 1, max: 20 })
+    .withMessage('限制数量必须在1-20之间')
+];
+
 // ==================== 用户认证路由 ====================
 
 // 微信小程序登录
@@ -151,6 +205,22 @@ router.post('/wechat/login',
   wechatLoginValidation,
   handleValidationErrors,
   wechatLogin
+);
+
+// 用户注册
+router.post('/user/register', 
+  rateLimit(3, 60 * 60 * 1000), // 1小时内最多3次请求
+  userRegisterValidation,
+  handleValidationErrors,
+  userRegister
+);
+
+// 用户登录（用户名密码）
+router.post('/user/login', 
+  rateLimit(10, 5 * 60 * 1000), // 5分钟内最多10次请求
+  userLoginValidation,
+  handleValidationErrors,
+  userLogin
 );
 
 // 获取当前用户信息
@@ -212,6 +282,14 @@ router.post('/refresh',
 
 // 登出
 router.post('/logout', logout);
+
+// 搜索商户
+router.get('/merchants/search', 
+  rateLimit(30, 60 * 1000), // 1分钟内最多30次请求
+  merchantSearchValidation,
+  handleValidationErrors,
+  searchMerchants
+);
 
 // ==================== 健康检查路由 ====================
 

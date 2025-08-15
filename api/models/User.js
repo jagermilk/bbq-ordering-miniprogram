@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import bcrypt from 'bcryptjs';
 
 /**
  * 用户模型
@@ -11,6 +12,22 @@ const userSchema = new mongoose.Schema({
     unique: true,
     sparse: true, // 允许null值，但不允许重复
     index: true
+  },
+  
+  // 用户名（用于账号密码登录）
+  username: {
+    type: String,
+    unique: true,
+    sparse: true, // 允许null值，但不允许重复
+    trim: true,
+    minlength: [3, '用户名至少3个字符'],
+    maxlength: [20, '用户名最多20个字符']
+  },
+  
+  // 密码（用于账号密码登录）
+  password: {
+    type: String,
+    minlength: [6, '密码至少6个字符']
   },
   
   // 用户昵称
@@ -87,8 +104,26 @@ userSchema.statics.findByOpenid = function(openid) {
   return this.findOne({ openid, isActive: true });
 };
 
-// 中间件：更新时自动设置updatedAt
-userSchema.pre('save', function(next) {
+// 静态方法：根据用户名查找用户
+userSchema.statics.findByUsername = function(username) {
+  return this.findOne({ username, isActive: true });
+};
+
+// 实例方法：比较密码
+userSchema.methods.comparePassword = async function(candidatePassword) {
+  if (!this.password) return false;
+  return bcrypt.compare(candidatePassword, this.password);
+};
+
+// 中间件：密码加密
+userSchema.pre('save', async function(next) {
+  // 如果密码被修改，则加密
+  if (this.isModified('password') && this.password) {
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
+  }
+  
+  // 更新时自动设置updatedAt
   if (this.isModified() && !this.isNew) {
     this.updatedAt = new Date();
   }

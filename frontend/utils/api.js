@@ -23,11 +23,55 @@ const request = (url, options = {}) => {
     }
   };
   
+  // 处理GET请求的查询参数
+  let finalUrl = `${BASE_URL}${url}`;
+  if (finalOptions.method === 'GET' && finalOptions.data) {
+    const params = new URLSearchParams(finalOptions.data).toString();
+    finalUrl += params ? `?${params}` : '';
+    delete finalOptions.data; // 删除data参数，避免uni.request错误处理
+  }
+  
   return new Promise((resolve, reject) => {
     uni.request({
-      url: `${BASE_URL}${url}`,
+      url: finalUrl,
       ...finalOptions,
       success: (res) => {
+        // 处理认证错误的通用函数
+        const handleAuthError = () => {
+          // 获取用户类型
+          const userType = uni.getStorageSync('userType') || 'user';
+          
+          // 清除本地token、用户信息和用户类型
+          uni.removeStorageSync('token');
+          uni.removeStorageSync('userInfo');
+          uni.removeStorageSync('userType');
+          
+          // 根据用户类型跳转到不同的登录页面
+          if (userType === 'merchant') {
+            uni.navigateTo({
+              url: '/pages/login/login?type=merchant'
+            });
+          } else {
+            uni.navigateTo({
+              url: '/pages/login/login?type=user'
+            });
+          }
+          
+          reject(new Error('认证失败，请重新登录'));
+        };
+        
+        // 处理认证错误 - 检查所有响应中的认证错误消息
+        if (res.data && res.data.message === '请提供有效的认证令牌') {
+          handleAuthError();
+          return;
+        }
+        
+        // 处理401未授权状态码
+        if (res.statusCode === 401) {
+          handleAuthError();
+          return;
+        }
+        
         if (res.statusCode === 200) {
           resolve(res.data);
         } else {
@@ -44,10 +88,48 @@ const request = (url, options = {}) => {
 // 用户认证相关API
 export const authAPI = {
   // 商户登录
-  login: (username, password) => {
-    return request('/auth/merchant/login', {
+  merchantLogin: async (username, password) => {
+    const response = await request('/auth/merchant/login', {
       method: 'POST',
       data: { username, password }
+    });
+    
+    // 登录成功后保存用户类型
+    if (response.success && response.data.token) {
+      uni.setStorageSync('userType', 'merchant');
+      uni.setStorageSync('token', response.data.token);
+      if (response.data.user || response.data.merchant) {
+        uni.setStorageSync('userInfo', response.data.user || response.data.merchant);
+      }
+    }
+    
+    return response;
+  },
+  
+  // 用户登录
+  userLogin: async (username, password) => {
+    const response = await request('/auth/user/login', {
+      method: 'POST',
+      data: { username, password }
+    });
+    
+    // 登录成功后保存用户类型
+    if (response.success && response.data.tokens && response.data.tokens.accessToken) {
+      uni.setStorageSync('userType', 'user');
+      uni.setStorageSync('token', response.data.tokens.accessToken);
+      if (response.data.user) {
+        uni.setStorageSync('userInfo', response.data.user);
+      }
+    }
+    
+    return response;
+  },
+  
+  // 用户注册
+  userRegister: (username, password, nickname) => {
+    return request('/auth/user/register', {
+      method: 'POST',
+      data: { username, password, nickname }
     });
   },
   
@@ -164,6 +246,9 @@ export const uploadAPI = {
     });
   }
 };
+
+// 导出request函数
+export { request };
 
 // 默认导出
 export default {

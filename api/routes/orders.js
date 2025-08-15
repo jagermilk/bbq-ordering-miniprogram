@@ -53,13 +53,29 @@ const createOrderValidation = [
     .isIn(['dine-in', 'takeaway'])
     .withMessage('就餐方式必须是dine-in或takeaway'),
   body('customerInfo.nickname')
-    .optional()
+    .optional({ checkFalsy: true })
     .isLength({ min: 1, max: 50 })
-    .withMessage('昵称长度应在1-50个字符之间'),
+    .withMessage('昵称长度应在1-50个字符之间')
+    .custom((value, { req }) => {
+      // 如果用户已登录，跳过验证（后端会使用真实用户信息）
+      if (req.userId) {
+        return true;
+      }
+      return true;
+    }),
   body('customerInfo.phone')
-    .optional()
-    .matches(/^1[3-9]\d{9}$/)
-    .withMessage('请输入有效的手机号码'),
+    .optional({ checkFalsy: true })
+    .custom((value, { req }) => {
+      // 如果用户已登录，跳过验证（后端会使用真实用户信息）
+      if (req.userId) {
+        return true;
+      }
+      // 如果用户未登录且提供了手机号，验证格式
+      if (value && !/^1[3-9]\d{9}$/.test(value)) {
+        throw new Error('请输入有效的手机号码');
+      }
+      return true;
+    }),
   body('note')
     .optional()
     .isLength({ max: 200 })
@@ -129,13 +145,21 @@ const queryValidation = [
 
 // ==================== 订单创建和查询路由 ====================
 
-// 创建订单（支持游客和登录用户）
+// 创建订单（需要用户登录）
 router.post('/', 
-  rateLimit(20, 60 * 60 * 1000), // 1小时内最多20次请求
-  optionalAuth, // 可选认证，支持游客下单
+  rateLimit(100, 60 * 60 * 1000), // 1小时内最多100次请求
+  authenticateUser, // 要求用户登录
   createOrderValidation,
   handleValidationErrors,
   createOrder
+);
+
+// 获取订单列表（需要认证）
+router.get('/', 
+  authenticateUser,
+  queryValidation,
+  handleValidationErrors,
+  getOrders
 );
 
 // 获取订单列表（用户查看自己的订单）

@@ -3,6 +3,7 @@ import Merchant from '../models/Merchant.js';
 import { generateToken } from '../middleware/auth.js';
 import config from '../config/config.js';
 import axios from 'axios';
+import { transformId, transformIdArray } from '../utils/transform.js';
 
 /**
  * 用户认证控制器
@@ -75,7 +76,7 @@ export const wechatLogin = async (req, res) => {
       success: true,
       message: '登录成功',
       data: {
-        user: {
+        user: transformId({
           id: user._id,
           openid: user.openid,
           nickname: user.nickname,
@@ -83,7 +84,7 @@ export const wechatLogin = async (req, res) => {
           role: user.role,
           phone: user.phone,
           status: user.status
-        },
+        }),
         tokens: {
           accessToken,
           refreshToken,
@@ -94,6 +95,89 @@ export const wechatLogin = async (req, res) => {
     
   } catch (error) {
     console.error('微信登录错误:', error);
+    res.status(500).json({
+      success: false,
+      message: '登录失败，请稍后重试'
+    });
+  }
+};
+
+// 用户登录（用户名密码）
+export const userLogin = async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    
+    if (!username || !password) {
+      return res.status(400).json({
+        success: false,
+        message: '请提供用户名和密码'
+      });
+    }
+    
+    // 查找用户
+    const user = await User.findByUsername(username);
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: '用户名或密码错误'
+      });
+    }
+    
+    // 验证密码
+    const isValidPassword = await user.comparePassword(password);
+    if (!isValidPassword) {
+      return res.status(401).json({
+        success: false,
+        message: '用户名或密码错误'
+      });
+    }
+    
+    // 检查用户状态
+    if (!user.isActive) {
+      return res.status(401).json({
+        success: false,
+        message: '用户账户已被禁用'
+      });
+    }
+    
+    // 更新最后登录时间
+    user.lastLoginAt = new Date();
+    await user.save();
+    
+    // 生成JWT令牌
+    const accessToken = generateToken({
+      userId: user._id,
+      role: user.role
+    }, '2h');
+    
+    const refreshToken = generateToken({
+      userId: user._id,
+      role: user.role
+    }, '7d');
+    
+    res.json({
+      success: true,
+      message: '登录成功',
+      data: {
+        user: transformId({
+          id: user._id,
+          username: user.username,
+          nickname: user.nickname,
+          avatar: user.avatar,
+          role: user.role,
+          phone: user.phone,
+          isActive: user.isActive
+        }),
+        tokens: {
+          accessToken,
+          refreshToken,
+          expiresIn: '2h'
+        }
+      }
+    });
+    
+  } catch (error) {
+    console.error('用户登录错误:', error);
     res.status(500).json({
       success: false,
       message: '登录失败，请稍后重试'
@@ -157,7 +241,7 @@ export const merchantLogin = async (req, res) => {
       message: '登录成功',
       data: {
         token: accessToken,
-        user: {
+        user: transformId({
           id: merchant._id,
           username: merchant.username,
           name: merchant.name,
@@ -169,7 +253,7 @@ export const merchantLogin = async (req, res) => {
           businessHours: merchant.businessHours,
           settings: merchant.settings,
           stats: merchant.stats
-        },
+        }),
         refreshToken,
         expiresIn: '8h'
       }
@@ -222,14 +306,14 @@ export const merchantRegister = async (req, res) => {
       success: true,
       message: '注册成功',
       data: {
-        merchant: {
+        merchant: transformId({
           id: merchant._id,
           username: merchant.username,
           name: merchant.name,
           phone: merchant.phone,
           address: merchant.address,
           isActive: merchant.isActive
-        }
+        })
       }
     });
     
@@ -284,7 +368,7 @@ export const getCurrentUser = async (req, res) => {
       res.json({
         success: true,
         data: {
-          user: {
+          user: transformId({
             id: req.user._id,
             openid: req.user.openid,
             nickname: req.user.nickname,
@@ -293,7 +377,7 @@ export const getCurrentUser = async (req, res) => {
             phone: req.user.phone,
             status: req.user.status,
             createdAt: req.user.createdAt
-          }
+          })
         }
       });
     } else {
@@ -318,7 +402,7 @@ export const getCurrentMerchant = async (req, res) => {
       res.json({
         success: true,
         data: {
-          merchant: {
+          merchant: transformId({
             id: req.merchant._id,
             username: req.merchant.username,
             name: req.merchant.name,
@@ -331,7 +415,7 @@ export const getCurrentMerchant = async (req, res) => {
             settings: req.merchant.settings,
             stats: req.merchant.stats,
             createdAt: req.merchant.createdAt
-          }
+          })
         }
       });
     } else {
@@ -364,12 +448,12 @@ export const updateUserProfile = async (req, res) => {
       success: true,
       message: '用户信息更新成功',
       data: {
-        user: {
+        user: transformId({
           id: user._id,
           nickname: user.nickname,
           avatar: user.avatar,
           phone: user.phone
-        }
+        })
       }
     });
     
@@ -400,14 +484,14 @@ export const updateMerchantProfile = async (req, res) => {
       success: true,
       message: '商户信息更新成功',
       data: {
-        merchant: {
+        merchant: transformId({
           id: merchant._id,
           name: merchant.name,
           description: merchant.description,
           phone: merchant.phone,
           address: merchant.address,
           businessHours: merchant.businessHours
-        }
+        })
       }
     });
     
@@ -437,8 +521,148 @@ export const logout = async (req, res) => {
   }
 };
 
+// 搜索商户
+export const searchMerchants = async (req, res) => {
+  try {
+    const { keyword, limit = 10 } = req.query;
+    
+    if (!keyword || keyword.trim().length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: '搜索关键词不能为空'
+      });
+    }
+    
+    // 构建搜索条件
+    const searchConditions = {
+      isActive: true,
+      $or: [
+        { name: { $regex: keyword.trim(), $options: 'i' } },
+        { description: { $regex: keyword.trim(), $options: 'i' } }
+      ]
+    };
+    
+    // 搜索商户
+    const merchants = await Merchant.find(searchConditions)
+      .select('_id name description phone address avatar businessHours stats')
+      .limit(parseInt(limit))
+      .sort({ 'stats.totalOrders': -1, createdAt: -1 });
+    
+    res.json({
+      success: true,
+      message: '搜索成功',
+      data: {
+        merchants: transformIdArray(merchants.map(merchant => ({
+          _id: merchant._id,
+          name: merchant.name,
+          description: merchant.description,
+          phone: merchant.phone,
+          address: merchant.address,
+          avatar: merchant.avatar,
+          businessHours: merchant.businessHours,
+          totalOrders: merchant.stats.totalOrders,
+          averageRating: merchant.stats.averageRating
+        }))),
+        total: merchants.length
+      }
+    });
+    
+  } catch (error) {
+    console.error('搜索商户错误:', error);
+    res.status(500).json({
+      success: false,
+      message: '搜索失败，请稍后重试'
+    });
+  }
+};
+
+// 用户注册
+export const userRegister = async (req, res) => {
+  try {
+    const { username, password, nickname, phone } = req.body;
+    
+    // 验证必填字段
+    if (!username || !password) {
+      return res.status(400).json({
+        success: false,
+        message: '请提供用户名和密码'
+      });
+    }
+    
+    // 检查用户名是否已存在
+    const existingUser = await User.findByUsername(username);
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: '用户名已存在'
+      });
+    }
+    
+    // 创建新用户
+    const user = new User({
+      username,
+      password,
+      nickname: nickname || username,
+      phone,
+      role: 'customer',
+      isActive: true
+    });
+    
+    await user.save();
+    
+    // 生成JWT令牌
+    const accessToken = generateToken({
+      userId: user._id,
+      role: user.role
+    }, '2h');
+    
+    const refreshToken = generateToken({
+      userId: user._id,
+      role: user.role
+    }, '7d');
+    
+    res.status(201).json({
+      success: true,
+      message: '用户注册成功',
+      data: {
+        user: transformId({
+          id: user._id,
+          username: user.username,
+          nickname: user.nickname,
+          phone: user.phone,
+          role: user.role,
+          isActive: user.isActive,
+          createdAt: user.createdAt
+        }),
+        tokens: {
+          accessToken,
+          refreshToken,
+          expiresIn: '2h'
+        }
+      }
+    });
+    
+  } catch (error) {
+    console.error('用户注册错误:', error);
+    
+    if (error.code === 11000) {
+      return res.status(400).json({
+        success: false,
+        message: '用户名已存在'
+      });
+    }
+    
+    res.status(500).json({
+      success: false,
+      message: '注册失败，请稍后重试'
+    });
+  }
+};
+
 export default {
   wechatLogin,
+  userLogin,
+  userRegister,
   merchantLogin,
   merchantRegister,
   refreshTokens,
@@ -446,5 +670,6 @@ export default {
   getCurrentMerchant,
   updateUserProfile,
   updateMerchantProfile,
-  logout
+  logout,
+  searchMerchants
 };

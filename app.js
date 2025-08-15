@@ -285,4 +285,5 @@ process.on('unhandledRejection', (reason, promise) => {
   process.exit(1);
 });
 
+// 触发重启 - 应用订单修复
 export default app;

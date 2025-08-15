@@ -1,6 +1,7 @@
 import Product from '../models/Product.js';
 import Merchant from '../models/Merchant.js';
 import mongoose from 'mongoose';
+import { transformId, transformIdArray } from '../utils/transform.js';
 
 /**
  * 菜品管理控制器
@@ -66,7 +67,7 @@ export const createProduct = async (req, res) => {
       success: true,
       message: '菜品创建成功',
       data: {
-        product
+        product: transformId(product)
       }
     });
     
@@ -138,34 +139,10 @@ export const getProducts = async (req, res) => {
       Product.countDocuments(query)
     ]);
     
-    // 转换菜品数据格式，将_id转换为id
-    const formattedProducts = products.map(product => {
-      const productObj = product.toObject();
-      return {
-        id: productObj._id,
-        name: productObj.name,
-        price: productObj.price,
-        description: productObj.description,
-        category: productObj.category,
-        isAvailable: productObj.isAvailable,
-        image: productObj.image,
-        stock: productObj.stock,
-        tags: productObj.tags,
-        nutrition: productObj.nutrition,
-        cookingTime: productObj.cookingTime,
-        spicyLevel: productObj.spicyLevel,
-        recommendLevel: productObj.recommendLevel,
-        sortOrder: productObj.sortOrder,
-        soldCount: productObj.soldCount,
-        createdAt: productObj.createdAt,
-        updatedAt: productObj.updatedAt
-      };
-    });
-    
     res.json({
       success: true,
       data: {
-        products: formattedProducts,
+        products: transformIdArray(products),
         pagination: {
           current: parseInt(page),
           pageSize: parseInt(limit),
@@ -208,7 +185,7 @@ export const getProduct = async (req, res) => {
     res.json({
       success: true,
       data: {
-        product
+        product: transformId(product)
       }
     });
     
@@ -262,7 +239,7 @@ export const updateProduct = async (req, res) => {
       success: true,
       message: '菜品更新成功',
       data: {
-        product
+        product: transformId(product)
       }
     });
     

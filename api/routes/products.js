@@ -51,7 +51,12 @@ const createProductValidation = [
     .withMessage('描述长度不能超过200个字符'),
   body('image')
     .optional()
-    .isURL()
+    .custom((value) => {
+      if (!value) return true; // 允许空值
+      // 允许标准URL、blob URL或相对路径
+      const urlRegex = /^(https?:\/\/.*|blob:.*|\/uploads\/.*)$/i;
+      return urlRegex.test(value);
+    })
     .withMessage('图片URL格式不正确'),
   body('category')
     .optional()
@@ -106,7 +111,12 @@ const updateProductValidation = [
     .withMessage('描述长度不能超过200个字符'),
   body('image')
     .optional()
-    .isURL()
+    .custom((value) => {
+      if (!value) return true; // 允许空值
+      // 允许标准URL、blob URL或相对路径
+      const urlRegex = /^(https?:\/\/.*|blob:.*|\/uploads\/.*)$/i;
+      return urlRegex.test(value);
+    })
     .withMessage('图片URL格式不正确'),
   body('category')
     .optional()

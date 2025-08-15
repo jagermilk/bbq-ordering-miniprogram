@@ -3,8 +3,26 @@
 		<view class="login-card">
 			<view class="header">
 				<image class="logo" src="/static/logo.png"></image>
-				<text class="title">商户登录</text>
-				<text class="subtitle">管理您的烧烤摊</text>
+				<text class="title">{{ loginType === 'merchant' ? '商户登录' : '用户登录' }}</text>
+				<text class="subtitle">{{ loginType === 'merchant' ? '管理您的烧烤摊' : '享受美味烧烤' }}</text>
+			</view>
+			
+			<!-- 登录类型切换 -->
+			<view class="login-type-tabs">
+				<view 
+					class="tab-item" 
+					:class="{ active: loginType === 'user' }"
+					@click="switchLoginType('user')"
+				>
+					<text class="tab-text">用户登录</text>
+				</view>
+				<view 
+					class="tab-item" 
+					:class="{ active: loginType === 'merchant' }"
+					@click="switchLoginType('merchant')"
+				>
+					<text class="tab-text">商户登录</text>
+				</view>
 			</view>
 			
 			<view class="form">
@@ -70,6 +88,7 @@ import store from '@/utils/store.js';
 export default {
 	data() {
 		return {
+			loginType: 'user', // 默认用户登录
 			form: {
 				username: '',
 				password: ''
@@ -86,12 +105,22 @@ export default {
 		}
 	},
 	
-	onLoad() {
+	onLoad(options) {
+		// 根据URL参数设置登录类型
+		if (options && options.type) {
+			this.loginType = options.type;
+		}
+		
 		// 检查是否已经登录
 		const token = uni.getStorageSync('token');
 		if (token) {
-			// 已登录，跳转到商户管理页面
-			this.redirectToMerchant();
+			// 根据用户类型跳转到相应页面
+			const userType = uni.getStorageSync('userType') || 'user';
+			if (userType === 'merchant') {
+				this.redirectToMerchant();
+			} else {
+				this.redirectToUser();
+			}
 		}
 	},
 	
@@ -105,21 +134,26 @@ export default {
 			showLoading('登录中...');
 			
 			try {
-				const response = await authAPI.login(this.form.username, this.form.password);
+				let response;
+				
+				// 根据登录类型调用不同的API
+				if (this.loginType === 'merchant') {
+					response = await authAPI.merchantLogin(this.form.username, this.form.password);
+				} else {
+					response = await authAPI.userLogin(this.form.username, this.form.password);
+				}
 				
 				if (response.success) {
 					// 登录成功
-					const { token, user } = response.data;
-					
-					// 保存用户信息和token
-					store.setToken(token);
-					store.setUserInfo(user);
-					
 					showToast('登录成功！');
 					
-					// 跳转到商户管理页面
+					// 根据登录类型跳转到相应页面
 					setTimeout(() => {
-						this.redirectToMerchant();
+						if (this.loginType === 'merchant') {
+							this.redirectToMerchant();
+						} else {
+							this.redirectToUser();
+						}
 					}, 1000);
 				} else {
 					this.errorMessage = response.message || '登录失败';
@@ -137,35 +171,54 @@ export default {
 		// 演示登录
 		handleDemoLogin() {
 			if (this.form.username === 'admin' && this.form.password === '123456') {
-				// 模拟登录成功
+				// 根据登录类型设置不同的用户信息
 				const mockUser = {
 					id: '689d94697c14eb9f089306fd',
 					username: 'admin',
-					name: '烧烤摊示例店',
-					role: 'merchant'
+					name: this.loginType === 'merchant' ? '烧烤摊示例店' : '示例用户',
+					role: this.loginType === 'merchant' ? 'merchant' : 'user'
 				};
 				
 				const mockToken = 'mock_token_' + Date.now();
 				
-				// 保存用户信息
+				// 保存用户信息和用户类型
 				store.setToken(mockToken);
 				store.setUserInfo(mockUser);
+				// 保存用户类型到本地存储
+				uni.setStorageSync('userType', this.loginType);
 				
 				showToast('登录成功！');
 				
-				// 跳转到商户管理页面
+				// 根据登录类型跳转到相应页面
 				setTimeout(() => {
-					this.redirectToMerchant();
+					if (this.loginType === 'merchant') {
+						this.redirectToMerchant();
+					} else {
+						this.redirectToUser();
+					}
 				}, 1000);
 			} else {
 				this.errorMessage = '用户名或密码错误';
 			}
 		},
 		
+		// 切换登录类型
+		switchLoginType(type) {
+			this.loginType = type;
+			this.clearError();
+		},
+		
 		// 跳转到商户管理页面
 		redirectToMerchant() {
 			uni.redirectTo({
-				url: '/pages/merchant/product'
+				url: '/pages/merchant/index'
+			});
+		},
+		
+		// 跳转到用户页面
+		redirectToUser() {
+			uni.redirectTo({
+				url: '/pages/index/index'
 			});
 		},
 		
@@ -381,5 +434,40 @@ export default {
 .footer-desc {
 	font-size: 24rpx;
 	color: rgba(255, 255, 255, 0.7);
+}
+
+/* 登录类型切换 */
+.login-type-tabs {
+	display: flex;
+	margin-bottom: 40rpx;
+	background-color: #F8F9FA;
+	border-radius: 20rpx;
+	padding: 8rpx;
+}
+
+.tab-item {
+	flex: 1;
+	text-align: center;
+	padding: 20rpx;
+	border-radius: 16rpx;
+	transition: all 0.2s;
+	cursor: pointer;
+}
+
+.tab-item.active {
+	background-color: #FF6B35;
+	box-shadow: 0 4rpx 12rpx rgba(255, 107, 53, 0.3);
+}
+
+.tab-text {
+	font-size: 28rpx;
+	font-weight: 500;
+	color: #666666;
+	transition: color 0.2s;
+}
+
+.tab-item.active .tab-text {
+	color: #FFFFFF;
+	font-weight: bold;
 }
 </style>

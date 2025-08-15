@@ -85,7 +85,7 @@
 </template>
 
 <script>
-import { formatTime, formatDateTime, getOrderStatusText, navigateTo } from '@/utils/utils.js';
+import { formatTime, getOrderStatusText, navigateTo } from '@/utils/utils.js';
 
 export default {
 	name: 'OrderStatus',

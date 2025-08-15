@@ -7,10 +7,21 @@
 		</view>
 		
 		<view class="role-selection">
-			<view class="role-card" @click="enterAsCustomer">
+			<view class="role-card customer-card">
 				<view class="role-icon customer-icon">👤</view>
 				<text class="role-title">顾客点餐</text>
-				<text class="role-desc">扫码进入菜品列表</text>
+				<text class="role-desc">选择点餐方式</text>
+				
+				<view class="customer-options">
+					<view class="option-btn scan-btn" @click="scanQRCode">
+						<text class="option-icon">📱</text>
+						<text class="option-text">扫码点餐</text>
+					</view>
+					<view class="option-btn search-btn" @click="searchMerchant">
+						<text class="option-icon">🔍</text>
+						<text class="option-text">搜索商户</text>
+					</view>
+				</view>
 			</view>
 			
 			<view class="role-card" @click="enterAsMerchant">
@@ -57,18 +68,6 @@ export default {
 	},
 	
 	methods: {
-		// 进入顾客模式
-		enterAsCustomer() {
-			const merchantId = uni.getStorageSync('merchantId');
-			if (merchantId) {
-				// 有商户ID，直接进入菜品列表
-				switchTab('/pages/menu/menu');
-			} else {
-				// 没有商户ID，提示扫码
-				this.scanQRCode();
-			}
-		},
-		
 		// 进入商户模式
 		enterAsMerchant() {
 			navigateTo('/pages/login/login');
@@ -103,6 +102,11 @@ export default {
 					showToast('扫码失败，请重试', 'error');
 				}
 			});
+		},
+		
+		// 搜索商户
+		searchMerchant() {
+			navigateTo('/pages/merchant-search/merchant-search');
 		}
 	}
 }
@@ -165,6 +169,60 @@ export default {
 
 .role-card:active {
 	transform: scale(0.98);
+}
+
+.customer-card {
+	padding-bottom: 20rpx;
+}
+
+.customer-options {
+	display: flex;
+	gap: 20rpx;
+	margin-top: 30rpx;
+	width: 100%;
+}
+
+.option-btn {
+	flex: 1;
+	background: #F5F5F5;
+	border-radius: 12rpx;
+	padding: 20rpx 15rpx;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 8rpx;
+	transition: all 0.2s;
+}
+
+.option-btn:active {
+	transform: scale(0.95);
+}
+
+.scan-btn {
+	background: linear-gradient(135deg, #4CAF50, #45A049);
+}
+
+.scan-btn .option-icon,
+.scan-btn .option-text {
+	color: #FFFFFF;
+}
+
+.search-btn {
+	background: linear-gradient(135deg, #2196F3, #1976D2);
+}
+
+.search-btn .option-icon,
+.search-btn .option-text {
+	color: #FFFFFF;
+}
+
+.option-icon {
+	font-size: 32rpx;
+}
+
+.option-text {
+	font-size: 24rpx;
+	font-weight: 500;
 }
 
 .role-icon {

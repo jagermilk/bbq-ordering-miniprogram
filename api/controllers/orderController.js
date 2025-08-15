@@ -3,6 +3,7 @@ import Product from '../models/Product.js';
 import Merchant from '../models/Merchant.js';
 import User from '../models/User.js';
 import mongoose from 'mongoose';
+import { transformId, transformIdArray, transformApiResponse } from '../utils/transform.js';
 
 /**
  * 订单管理控制器
@@ -47,15 +48,22 @@ export const createOrder = async (req, res) => {
       });
     }
     
-    if (!merchant.isOpen) {
+    if (!merchant.isActive) {
       return res.status(400).json({
         success: false,
         message: '商户暂停营业'
       });
     }
     
+    if (!merchant.settings.acceptOrders) {
+      return res.status(400).json({
+        success: false,
+        message: '商户暂时不接受新订单'
+      });
+    }
+    
     // 验证营业时间
-    if (!merchant.isInBusinessHours()) {
+    if (!merchant.isBusinessHours()) {
       return res.status(400).json({
         success: false,
         message: '当前不在营业时间内'
@@ -125,6 +133,32 @@ export const createOrder = async (req, res) => {
     // 生成排队号
     const queueNumber = await Order.generateQueueNumber(merchantId);
     
+    // 准备客户信息
+    let finalCustomerInfo = {};
+    
+    // 如果用户已登录，始终使用用户的真实信息，忽略前端传递的customerInfo
+    if (req.userId) {
+      const user = await User.findById(req.userId).session(session);
+      if (user) {
+        finalCustomerInfo = {
+          nickname: user.nickname || '',
+          phone: user.phone || '',
+          avatar: user.avatar || ''
+        };
+        console.log(`订单创建：使用登录用户信息 - 用户ID: ${req.userId}, 昵称: ${user.nickname}, 手机: ${user.phone}`);
+      } else {
+        console.error(`订单创建：找不到用户信息 - 用户ID: ${req.userId}`);
+        return res.status(400).json({
+          success: false,
+          message: '用户信息异常，请重新登录'
+        });
+      }
+    } else {
+      // 如果用户未登录，使用前端传递的信息
+      finalCustomerInfo = customerInfo || {};
+      console.log('订单创建：使用前端传递的客户信息', finalCustomerInfo);
+    }
+    
     // 创建订单
     const order = new Order({
       merchantId,
@@ -133,22 +167,10 @@ export const createOrder = async (req, res) => {
       dineType,
       totalAmount,
       queueNumber,
-      customerInfo: customerInfo || {},
+      customerInfo: finalCustomerInfo,
       items: orderItems,
       note: note || ''
     });
-    
-    // 如果用户已登录，获取用户信息
-    if (req.userId) {
-      const user = await User.findById(req.userId).session(session);
-      if (user) {
-        order.customerInfo = {
-          nickname: user.nickname,
-          phone: user.phone,
-          avatar: user.avatar
-        };
-      }
-    }
     
     await order.save({ session });
     
@@ -162,8 +184,8 @@ export const createOrder = async (req, res) => {
       success: true,
       message: '订单创建成功',
       data: {
-        order: {
-          id: order._id,
+        order: transformId({
+          _id: order._id,
           orderNumber: order.orderNumber,
           status: order.status,
           queueNumber: order.queueNumber,
@@ -171,7 +193,7 @@ export const createOrder = async (req, res) => {
           dineType: order.dineType,
           items: order.items,
           createdAt: order.createdAt
-        }
+        })
       }
     });
     
@@ -257,7 +279,7 @@ export const getOrders = async (req, res) => {
     res.json({
       success: true,
       data: {
-        orders,
+        orders: transformIdArray(orders),
         pagination: {
           current: parseInt(page),
           pageSize: parseInt(limit),
@@ -314,7 +336,7 @@ export const getOrder = async (req, res) => {
     res.json({
       success: true,
       data: {
-        order
+        order: transformId(order)
       }
     });
     
@@ -374,14 +396,14 @@ export const updateOrderStatus = async (req, res) => {
       success: true,
       message: '订单状态更新成功',
       data: {
-        order: {
-          id: order._id,
+        order: transformId({
+          _id: order._id,
           orderNumber: order.orderNumber,
           status: order.status,
           statusText: order.getStatusText(),
           completedAt: order.completedAt,
           cancelReason: order.cancelReason
-        }
+        })
       }
     });
     
@@ -465,12 +487,12 @@ export const cancelOrder = async (req, res) => {
       success: true,
       message: '订单取消成功',
       data: {
-        order: {
-          id: order._id,
+        order: transformId({
+          _id: order._id,
           orderNumber: order.orderNumber,
           status: order.status,
           cancelReason: order.cancelReason
-        }
+        })
       }
     });
     
@@ -595,7 +617,7 @@ export const getQueueInfo = async (req, res) => {
     res.json({
       success: true,
       data: {
-        queueOrders,
+        queueOrders: transformIdArray(queueOrders),
         queueLength: queueOrders.length,
         averageWaitTime,
         estimatedWaitTime: queueOrders.length * averageWaitTime
